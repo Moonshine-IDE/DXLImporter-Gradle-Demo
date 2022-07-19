@@ -1,0 +1,10 @@
+.classpath
+.DS_Store
+.gradle
+.importDxlDebugOutput
+.project
+.settings
+.svnignore
+bin
+build
+gradle.properties
