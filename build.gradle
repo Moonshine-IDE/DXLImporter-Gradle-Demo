@@ -117,6 +117,7 @@ class ImportAgent extends JavaExec {
 		// set args here so that it can use the configured properties
 		args '-a', propertiesFile?:'undefined', '-t', 'agent', '-sp', 'scriptLibraryConfig/ScriptLibraryConfig.properties', '-b', '.', '-s', project.findProperty('server')?:'', '-n', project.findProperty('dbName')?:'unknown.nsf'
 		super.exec()
+		println 'NOTE:  You can ignore the SVNException error above.  This will be removed in a later version of DXLImporter'
 	}
 }
 

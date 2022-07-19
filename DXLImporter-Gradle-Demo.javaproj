@@ -1,12 +1,13 @@
 <project>
   <gradleBuild>
-    <option commandLine="clean importAgent"/>
+    <option commandLine="clean importAll"/>
     <actions>
       <action actionName="Clean" action="clean"/>
       <action actionName="Publish to Maven Local" action="publishToMavenLocal"/>
       <action actionName="Clean and Run" action="clean run"/>
       <action actionName="Clean and Build" action="clean build"/>
-      <action actionName="Import Agent" action="clean importAgent"/>
+      <action actionName="Import All Agents" action="clean importAll"/>
+      <action actionName="Import Single Agent" action="clean importDemoJavaAgent"/>
     </actions>
   </gradleBuild>
   <classpaths>
@@ -17,6 +18,7 @@
     <option mainclass="$ProjectName"/>
   </build>
   <options>
+    <option projectType=""/>
     <option jdkType="jdk-8"/>
   </options>
 </project>
