@@ -15,7 +15,7 @@ public class DemoJavaAgent extends AgentBase {
 			System.out.println("Database is " + msg);
 			
 			// test the script library
-			//System.out.println("Test Script Library:  '" + DemoScriptLibrary.getExampleText() + "'.");
+			System.out.println("Test Script Library:  '" + DemoScriptLibrary.getExampleText() + "'.");
 
 			System.out.println("Your custom message here!");
 

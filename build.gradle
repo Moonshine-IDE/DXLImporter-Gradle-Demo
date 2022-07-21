@@ -15,7 +15,7 @@ sourceSets {
     }
 }
 
-File importPropertiesDir = new File('agentProperties/')
+//File importPropertiesDir = new File('agentProperties/')
 
 
 // Required for Java 8 Language server support
@@ -117,14 +117,16 @@ task importAll(dependsOn: tasks.getByName('importAllScriptLibraries')) {
 // TODO: generate tasks for the script libraries
 
 // generate tasks for agents
-importPropertiesDir.eachFileRecurse groovy.io.FileType.FILES, {File curFile ->
+String agentPropertiesDirName = project.findProperty('agentPropertiesDir') ?: 'agentProperties/'
+new File(agentPropertiesDirName).eachFileRecurse groovy.io.FileType.FILES, {File curFile ->
 	String fullName = curFile.getName()
 	int splitIndex = fullName.lastIndexOf('.')
 	
 	if (splitIndex >= 0) {  // confirm this is a file with the expected format
 		String extension = fullName.substring(splitIndex+1)
 		String agentName = fullName.substring(0, splitIndex)
-		boolean isScriptLibrary = (curFile.getParentFile().getName().equalsIgnoreCase('scriptbuild')) // default all other files to be agents
+		// treat any files in the "scriptbuild" directory as script libraries.  Improve this logic if needed.
+		boolean isScriptLibrary = (curFile.getAbsolutePath().toLowerCase().indexOf('scriptbuild') > 0) // default all other files to be agents
 		
 		if (extension.equalsIgnoreCase('properties')) {
 			String importTaskName = "import$agentName"
