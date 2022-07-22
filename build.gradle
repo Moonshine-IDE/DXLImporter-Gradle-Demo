@@ -108,7 +108,7 @@ class RunDomino extends JavaExec {
 	
 	public RunDomino() {
 		super()
-		classpath = sourceSets.main.runtimeClasspath
+		classpath = project.sourceSets.main.runtimeClasspath
 		addDominoEnvironment()
 	}
 	
@@ -138,7 +138,7 @@ class RunDomino extends JavaExec {
  * Allows setting some of the JavaExec properties in a reusable task
  * I based this on: https://www.baeldung.com/gradle-custom-task
  */
-class ImportAgent extends JavaExec {
+class ImportAgent extends RunDomino {
 	String propertiesFile
 	String type = 'agent' // "agent" or "scriptlibrary" - make this an enum?
 	
@@ -146,9 +146,6 @@ class ImportAgent extends JavaExec {
 		super()
 		classpath = project.configurations.dxlRuntime
 		main = 'com.Prominic.ImportDxlNsfForStatic'
-		
-		environment('DYLD_LIBRARY_PATH', project.findProperty('notesInstallation')?:'')
-		// TODO:  update args when propertiesFile is updated
 		
 	}
 	
