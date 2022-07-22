@@ -141,6 +141,8 @@ class RunDomino extends JavaExec {
 class ImportAgent extends RunDomino {
 	String propertiesFile
 	String type = 'agent' // "agent" or "scriptlibrary" - make this an enum?
+	String server = project.findProperty('server')
+	String dbName = project.findProperty('dbName')
 	
 	public ImportAgent() {
 		super()
@@ -152,15 +154,27 @@ class ImportAgent extends RunDomino {
 	@TaskAction
 	@Override
 	void exec() {
+		
+		// validation
+		if (!propertiesFile) {
+			throw new GradleException("No defined agent properties file.")
+		}
+		if (!server) {
+			throw new GradleException("No Domino server defined.  Use `-Pserver` or `gradle.properties`.")
+		}
+		if (!dbName) {
+			throw new GradleException("No Domino dbName defined.  Use `-PdbName` or `gradle.properties`.")
+		}
+		
 		// set args here so that it can use the configured properties
 		args '-a', propertiesFile?:'undefined', 
 		     '-t', this.type, 
 		     '-sp', project.findProperty('scriptLibraryConfig')?:'scriptLibraryConfig/ScriptLibraryConfig.properties', 
 		     '-b', '.', 
-		     '-s', project.findProperty('server')?:'', 
-		     '-n', project.findProperty('dbName')?:'unknown.nsf'
+		     '-s', server, 
+		     '-n', dbName
 		super.exec()
-		println 'NOTE:  You can ignore the SVNException error above.  This will be removed in a later version of DXLImporter'
+		logger.warn 'NOTE:  You can ignore the SVNException error above.  This will be removed in a later version of DXLImporter'
 	}
 }
 
