@@ -25,13 +25,15 @@ else if (!(new File(notesInstallation).exists())) {
 	throw new GradleException("Invalid configured path for Notes installation ($notesInstallation).  Check notesInstallation in build.gradle.")
 }
 
-String notesJarPath = "$notesInstallation/jvm/lib/ext/Notes.jar"
+String notesJarExtDir = "$notesInstallation/jvm/lib/ext"
+String notesJarPath = "$notesJarExtDir/Notes.jar"
 // change envPath as needed
 if (notesInstallation.toLowerCase().startsWith('/applications/')) { // treat as macOS
 	if (!(new File(notesJarPath).exists())) {
 		// alternative location for macOS:  /Applications/HCL Notes.app/Contents/Resources/jvm/lib/ext/Notes.jar 
 		logger.info "Notes.jar not found at $notesJarPath"
-		notesJarPath = "$notesInstallation/../Resources/jvm/lib/ext/Notes.jar"
+		notesJarExtDir = "$notesInstallation/../Resources/jvm/lib/ext"
+		notesJarPath = "$notesJarExtDir/Notes.jar"
 	}
 	if (!(new File(notesJarPath).exists())) {
 		logger.info "Notes.jar not found at $notesJarPath"
@@ -59,7 +61,7 @@ dependencies {
     
     // Dependencies for DXL Importer
     dxlRuntime 'org.tmatesoft.svnkit:svnkit:1.8.5'
-    dxlRuntime files("${project.findProperty('notesInstallation')}/jvm/lib/ext/websvc.jar")
+    dxlRuntime files("$notesJarExtDir/websvc.jar")
 
 }
 
