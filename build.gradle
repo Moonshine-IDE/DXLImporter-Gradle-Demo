@@ -3,7 +3,11 @@ plugins {
     id 'application'  // allows 'run' task.
     id 'eclipse'      // allows dependencies to be exported to .classpath
 }
+
+// Without archivesBaseName, the default JAR will match the parent directory, which can break the agentProperties configuration
+archivesBaseName='DXLImporter-Gradle-Demo'
 mainClassName = 'net.prominic.demo.DemoJavaAgent'
+
 repositories {
     mavenCentral()
 }
@@ -112,6 +116,20 @@ class RunDomino extends JavaExec {
 		super()
 		classpath = project.sourceSets.main.runtimeClasspath
 		addDominoEnvironment()
+		
+		// map STDERR to STDOUT to make the output more clear in Moonshine
+		errorOutput = System.out
+		
+		String notesIDPassword = project.findProperty('notesIDPassword')
+		if (notesIDPassword) {
+			// pass the password by STDIN
+			// If there is a prompt for an invalid password, escape the prompt with Esc
+			standardInput = new java.io.StringBufferInputStream("${notesIDPassword}\n\u001B")
+		}
+		else {
+			// Send the Esc key to cancel any unexpected password prompts
+			standardInput = new java.io.StringBufferInputStream("\u001B")
+		}
 	}
 	
 	public addDominoEnvironment() {
