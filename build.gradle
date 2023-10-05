@@ -171,6 +171,9 @@ class ImportAgent extends RunDomino {
 	String server = project.findProperty('server')
 	@Input
 	String dbName = project.findProperty('dbName')
+        /** A value of 'debug' will show additional debugging output. */
+        @Input
+        String importLogMode = project.findProperty('importLogMode') ?: ''
 	
 	public ImportAgent() {
 		super()
@@ -199,8 +202,14 @@ class ImportAgent extends RunDomino {
 		     '-t', this.type, 
 		     '-sp', project.findProperty('scriptLibraryConfig')?:'scriptLibraryConfig/ScriptLibraryConfig.properties', 
 		     '-b', '.', 
-		     '-s', server, 
-		     '-n', dbName
+		     '-s', this.server, 
+		     '-n', this.dbName
+
+
+                if (this.importLogMode) { // skip for empty value
+                    // add additional arguments
+                    args '-l', this.importLogMode
+                }
 		super.exec()
 		logger.warn 'NOTE:  You can ignore the SVNException error above.  This will be removed in a later version of DXLImporter'
 	}
