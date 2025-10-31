@@ -50,6 +50,9 @@ You can also pass it with command line arguments:
 These configuration types can be used together - command line arguments will take priority in this case.  
 [This article](https://tomgregory.com/gradle-project-properties-best-practices/) shows other ways to set the properties.
 
+Optional configuration properties:
+- `importLogMode`:  Set to `debug` to see additional debugging output from the DXL Importer process.
+
 ## Running Tasks
 
 To import all agents, use the `importAll` task:
