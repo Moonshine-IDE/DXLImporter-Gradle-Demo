@@ -5,6 +5,7 @@
 .project
 .settings
 .svnignore
+*.swp
 bin
 build
 gradle.properties

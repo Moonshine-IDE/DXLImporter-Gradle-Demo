@@ -1,0 +1,59 @@
+name: Test in Private Super.Human.Installer instance
+
+# Optional feature to automatically build and import your agents into a local Domino instance created with Super.Human.Installer
+# Setup:  See README for more info
+# - Create a Super.Human.Installer instance
+# - Setup a private GitHub self-hosted runner on your instance
+# - Populate the secrets in the evn section
+# - Commit a change to your repository, and the agents will be deployed for testing on your local instance.
+
+
+on:
+  workflow_dispatch:
+  push:
+#    branches: 
+#        - main
+
+env:
+  # Instead of setting it here, add PASSWORD=mypass into ~/.bash_profile
+  #PASSWORD: ${{ secrets.TEST_PASSWORD }}
+  SERVER: ${{ vars.TEST_SERVER }}
+  DATABASE: ${{ vars.TEST_DATABASE }}
+  DOMINO_INSTALLATION: ${{ vars.TEST_DOMINO_INSTALLATION }}
+
+jobs:
+  setup-database:
+    runs-on: [self-hosted, super.human.installer]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Domino environment
+        run: |
+          ln -s /local/notesjava/notes.ini
+        shell: bash
+      
+      - name: Verify environment
+        run: |
+          whoami
+          set
+          java -jar /local/notesjava/CheckNotesUser.jar
+        shell: bash
+      
+      - name: Create test database
+        run: |
+          # PASSWORD needs to be set in environment
+          java -jar -DPASSWORD="${{ secrets.TEST_PASSWORD }}" /local/notesjava/CreateDatabase.jar $SERVER $DATABASE 2>&1
+        shell: bash
+      
+      - name: Import other design elements using DxlImporter.  Repeat for additional files
+        run: |
+          # PASSWORD needs to be set in environment
+          java -DPASSWORD="${{ secrets.TEST_PASSWORD }}" -jar /local/notesjava/DXLImport.jar $SERVER $DATABASE dxl/HelloWorld.dxl 2>&1
+        shell: bash
+      
+      - name: Import all agents in to the test database
+        run: |
+          gradle -PnotesIDPassword="${{ secrets.TEST_PASSWORD }}" -PnotesInstallation=$DOMINO_INSTALLATION -Pserver=$SERVER -PdbName=$DATABASE clean importAll 2>&1
+        shell: bash
