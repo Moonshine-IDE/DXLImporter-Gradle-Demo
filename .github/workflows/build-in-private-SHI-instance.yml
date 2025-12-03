@@ -40,20 +40,39 @@ jobs:
           set
           java -jar /local/notesjava/CheckNotesUser.jar
         shell: bash
-      
-      - name: Create test database
+
+      # Create an empty database with a default view and permissive ACL
+      - name: Create empty database
         run: |
-          # PASSWORD needs to be set in environment
-          java -jar -DPASSWORD="${{ secrets.TEST_PASSWORD }}" /local/notesjava/CreateDatabase.jar $SERVER $DATABASE 2>&1
+          java  -DPASSWORD="${{ secrets.TEST_PASSWORD }}" \
+                -jar /local/notesjava/CreateDatabase.jar \
+                $SERVER $DATABASE 2>&1
         shell: bash
-      
-      - name: Import other design elements using DxlImporter.  Repeat for additional files
+
+      # Import DXL into the database
+      # Use HCL Designer to export an existing design element or document to a DXL file.
+      # You can duplicate this entry for multiple files
+      - name: Import other design elements or documents using DxlImporter.  Repeat for additional files
         run: |
-          # PASSWORD needs to be set in environment
-          java -DPASSWORD="${{ secrets.TEST_PASSWORD }}" -jar /local/notesjava/DXLImport.jar $SERVER $DATABASE dxl/HelloWorld.dxl 2>&1
+          java -DPASSWORD="${{ secrets.TEST_PASSWORD }}" \ 
+               -jar /local/notesjava/DXLImport.jar \
+               $SERVER $DATABASE dxl/HelloWorld.dxl 2>&1
         shell: bash
       
       - name: Import all agents in to the test database
         run: |
-          gradle -PnotesIDPassword="${{ secrets.TEST_PASSWORD }}" -PnotesInstallation=$DOMINO_INSTALLATION -Pserver=$SERVER -PdbName=$DATABASE clean importAll 2>&1
+          # This imports all agents configured in agentProperties using the the custom importAll task in build.gradle
+          gradle -PnotesIDPassword="${{ secrets.TEST_PASSWORD }}" \
+                 -PnotesInstallation=$DOMINO_INSTALLATION \
+                 -Pserver=$SERVER -PdbName=$DATABASE \
+                 clean importAll 2>&1
         shell: bash
+      
+#      - name: Import a single agent
+#        run: |
+#          # This imports a single agent using the generated task in build.gradle
+#          gradle -PnotesIDPassword="${{ secrets.TEST_PASSWORD }}" \
+#                 -PnotesInstallation=$DOMINO_INSTALLATION \
+#                 -Pserver=$SERVER -PdbName=$DATABASE \
+#                 clean importTestWeb 2>&1
+#        shell: bash
