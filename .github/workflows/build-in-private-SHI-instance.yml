@@ -34,17 +34,24 @@ jobs:
           ln -s /local/notesjava/notes.ini
         shell: bash
       
-      - name: Verify environment
+      - name: Verify Domino environment and ID
         run: |
           whoami
           set
+          echo "Server: '$SERVER'"
+          echo "Database:  '$DATABASE'"
+
+          echo "# Check configured server"
+          ping -c 1 `echo "$SERVER"  | sed 's:\(.*\)/.*$:\1:'`
+
+          echo "# Check configured user"
           java -jar /local/notesjava/CheckNotesUser.jar
         shell: bash
 
       # Create an empty database with a default view and permissive ACL
       - name: Create empty database
         run: |
-          java  -DPASSWORD="${{ secrets.TEST_PASSWORD }}" \
+          PASSWORD=password java \
                 -jar /local/notesjava/CreateDatabase.jar \
                 $SERVER $DATABASE 2>&1
         shell: bash
@@ -54,7 +61,7 @@ jobs:
       # You can duplicate this entry for multiple files
       - name: Import other design elements or documents using DxlImporter.  Repeat for additional files
         run: |
-          java -DPASSWORD="${{ secrets.TEST_PASSWORD }}" \ 
+          PASSWORD=password java \
                -jar /local/notesjava/DXLImport.jar \
                $SERVER $DATABASE dxl/HelloWorld.dxl 2>&1
         shell: bash
@@ -76,3 +83,7 @@ jobs:
 #                 -Pserver=$SERVER -PdbName=$DATABASE \
 #                 clean importTestWeb 2>&1
 #        shell: bash
+
+
+# TODO:  Add any other build tasks to test your application
+# Example:  Build a Web app and deploy it to the Domino server:  /local/notesdata/domino/html/<your-app>
