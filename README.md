@@ -1,26 +1,34 @@
 # DxlImporterDemo_GradleMinimal
 
-Example project for using Gradle to run DXL Importer scripts.
+This is a template repository for writing Java agents based on the HCL Domino® API.  It has two main components:
+- DXL Importer - used to import the agents from a Java Gradle project into a database
+- GitHub Action - Used to generate at test environment for the agents in a 
 
 ## Requirements
 
 Environment requirements:
 - Gradle (tested with 5.4.1)
 - Java 8 (required for Domino API)
-- HCL Notes installation (tested with 11.0)
+- HCL Notes® or Domino® installation.
+- [Super.Human.Installer](https://www.superhumaninstaller.com/) 1.7.0 or alter
 
 
-## Using this demo
+## DXL Importer
+
+### Using this demo
 
 To try this demo:
 1. Setup `gradle.properties` according to the template in [Domino Configuration](#domino-configuration)
 2. Run `gradle importAll`
 
-This will import the following agents:
-- DemoJavaAgent - example that can be run from the Notes client
-TODO:  add more
+The following example agents are configured in the template
+- `DemoJavaAgent` - An agent that runs in the Notes client
+- `TestWeb` - An agent that can be called from the browser
+- `WQS_Placeholder` - A WebQuerySave agent that can be called from a form
 
-## Agent Configuration
+You can also find an example script library, `DemoScriptLibrary`
+
+### Agent Configuration
 
 Configure agents in `agentProperties/agentbuild`.
 
@@ -28,9 +36,9 @@ Configure script libraries in `agentProperties/scriptbuild`
 
 The name of the file (excluding the `.properties extension`) should match the name of the agent.  This name will be used in [Running Tasks](#running-tasks).
 
-TODO:  writeup for the properties.
+TODO:  writeup or link the property documentation
 
-## Domino Configuration
+### Domino Configuration
 
 The following parameters are required:
 - notesInstallation:  The path to the local notes installation
@@ -53,7 +61,7 @@ These configuration types can be used together - command line arguments will tak
 Optional configuration properties:
 - `importLogMode`:  Set to `debug` to see additional debugging output from the DXL Importer process.
 
-## Running Tasks
+### Running Tasks
 
 To import all agents, use the `importAll` task:
 
@@ -82,13 +90,59 @@ This template includes an example GitHub action.  This is designed to support an
 
 ### Setup
 
-TODO:  Fill in these instructions
+#### Create and configure the repository
 
-1. Create a copy of this repository
+For a new repository, you can [create your repository from this template](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template)
 
-2. Create an SHI instance.  You can setup a self-hosted runner for this instance on creation (TODO), or install it later
+#### Setup a Self-hosted Runner
 
-3. In your repository, open `Settings > Secrets and variables > Actions` and set these variables and secrets
+The provided GitHub action is expected to run in a Vagrant instance created with Super.Human.Installer.  When creating the instance, choose:
+- Service:  HCL Standalone Provisioner
+- Vagrant Provisioner:  HCL Standalone Provisioner v0.1.24 (or later)
+
+You will then need to configure the self-hosted runner with one of three methods.
+
+##### Configure as part of SHI instance
+
+TODO: Update SHI instance before initial creation.
+
+You will need to create a [Github fine-tuned access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token).  The required permissions are documented [here](https://github.com/STARTcloud/startcloud_roles/blob/main/roles/git_runner/README.md#github-token-permissions)
+- Organization Runners: Organization permissions → Self-hosted runners → Read and Write access
+- Repository Runners: Repository permissions → Administration → Read and Write access
+
+
+##### Configure with Ansible
+
+You can use the same provisioners above to create a runner in an existing instance.  See the full documentation [here](https://github.com/STARTcloud/startcloud_roles/blob/main/roles/git_runner/README.md).
+
+```
+ansible localhost -m include_role -a name=startcloud.startcloud_roles.git_runner \
+  -e git_runner_github_token=github_pat_TOKEN \
+  -e git_runner_org=STARTcloud \
+  -e git_runner_name=my-runner \
+  -e git_runner_user=java_user \
+  -e git_runner_dir=/home/java_user/my-runner \
+  -e "git_runner_labels=['self-hosted','super.human.installer']" \
+  -e git_runner_ephemeral=false \
+  -e git_runner_version=latest \
+  --become
+```
+
+The `github_pat_TOKEN` is GitHub fine-tuned access token following the same requirements as as above.
+
+
+##### Configure Manually
+
+For an existing SHI instance, you may find it easier to [create the self-hosted runner through GitHub](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners).  This avoids the need for a personal access token
+
+Some Requirements:
+- The self-hosted runner needs to run as `java_user`:  `sudo su - java_user`
+- You will need to add at least these labels.  If you forget them, they can be added later in the GitHub interface:  `self-hosted,super.human.installer`
+
+
+#### Setup Environment
+
+ In your repository, open `Settings > Secrets and variables > Actions` and set these variables and secrets
 
 Variable                    | Notes
 ----------------------------|--------------------
@@ -101,8 +155,9 @@ Secret                      | Notes
 ----------------------------|--------------------
 `TEST_PASSWORD`             | This will be `password` unless you changed it
 
-4. Commit a change to your repository, or trigger the build manually from the Actions tab
 
-5. Test your agent on your instance:  `https://%server%/%TEST_DATABASE%/%agent_name%?OpenAgent`
+### Usage
 
-For example:  `https://domino-1.acme.com/Test.nsf/HelloWorld?OpenAgent`
+Once you are fully configured, you should be able to test your code like this:
+1. Commit a change to your repository, or trigger the build manually from the Actions tab
+2. Test your agent on your instance:  `https://%server%/%TEST_DATABASE%/%agent_name%?OpenAgent`.  Example:  `https://domino-1.acme.com/Test.nsf/HelloWorld?OpenAgent`
