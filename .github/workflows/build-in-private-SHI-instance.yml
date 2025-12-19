@@ -1,0 +1,89 @@
+name: Test in Private Super.Human.Installer instance
+
+# Optional feature to automatically build and import your agents into a local Domino instance created with Super.Human.Installer
+# Setup:  See README for more info
+# - Create a Super.Human.Installer instance
+# - Setup a private GitHub self-hosted runner on your instance
+# - Populate the secrets in the evn section
+# - Commit a change to your repository, and the agents will be deployed for testing on your local instance.
+
+
+on:
+  workflow_dispatch:
+  push:
+#    branches: 
+#        - main
+
+env:
+  # Instead of setting it here, add PASSWORD=mypass into ~/.bash_profile
+  #PASSWORD: ${{ secrets.TEST_PASSWORD }}
+  SERVER: ${{ vars.TEST_SERVER }}
+  DATABASE: ${{ vars.TEST_DATABASE }}
+  DOMINO_INSTALLATION: ${{ vars.TEST_DOMINO_INSTALLATION }}
+
+jobs:
+  setup-database:
+    runs-on: [self-hosted, super.human.installer]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Domino environment
+        run: |
+          ln -s /local/notesjava/notes.ini
+        shell: bash
+      
+      - name: Verify Domino environment and ID
+        run: |
+          whoami
+          set
+          echo "Server: '$SERVER'"
+          echo "Database:  '$DATABASE'"
+
+          echo "# Check configured server"
+          ping -c 1 `echo "$SERVER"  | sed 's:\(.*\)/.*$:\1:'`
+
+          echo "# Check configured user"
+          java -jar /local/notesjava/CheckNotesUser.jar
+        shell: bash
+
+      # Create an empty database with a default view and permissive ACL
+      - name: Create empty database
+        run: |
+          PASSWORD=password java \
+                -jar /local/notesjava/CreateDatabase.jar \
+                $SERVER $DATABASE 2>&1
+        shell: bash
+
+      # Import DXL into the database
+      # Use HCL Designer to export an existing design element or document to a DXL file.
+      # You can duplicate this entry for multiple files
+      - name: Import other design elements or documents using DxlImporter.  Repeat for additional files
+        run: |
+          PASSWORD=password java \
+               -jar /local/notesjava/DXLImport.jar \
+               $SERVER $DATABASE dxl/HelloWorld.dxl 2>&1
+        shell: bash
+      
+      - name: Import all agents in to the test database
+        run: |
+          # This imports all agents configured in agentProperties using the the custom importAll task in build.gradle
+          gradle -PnotesIDPassword="${{ secrets.TEST_PASSWORD }}" \
+                 -PnotesInstallation=$DOMINO_INSTALLATION \
+                 -Pserver=$SERVER -PdbName=$DATABASE \
+                 clean importAll 2>&1
+        shell: bash
+      
+#      - name: Import a single agent
+#        run: |
+#          # This imports a single agent using the generated task in build.gradle
+#          gradle -PnotesIDPassword="${{ secrets.TEST_PASSWORD }}" \
+#                 -PnotesInstallation=$DOMINO_INSTALLATION \
+#                 -Pserver=$SERVER -PdbName=$DATABASE \
+#                 clean importTestWeb 2>&1
+#        shell: bash
+
+
+# TODO:  Add any other build tasks to test your application
+# Example:  Build a Web app and deploy it to the Domino server:  /local/notesdata/domino/html/<your-app>

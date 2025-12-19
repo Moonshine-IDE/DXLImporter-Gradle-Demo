@@ -64,3 +64,45 @@ To import a single agent or script library, call `import<Name>` where `<Name>` m
 	gradle importDemoJavaAgent
 	
 The `import<Name>` tasks are generated automatically, but you can define your own task if desired.  TODO:  describe how to override the import or jar tasks
+
+
+
+
+
+## GitHub Actions
+
+This template includes an example GitHub action.  This is designed to support an automated development workflow based on [Super.Human.Installer](https://superhumaninstaller.com/) Domino instances.
+1. Make changes to an agent
+2. Commit
+3. The GitHub Action will:
+    1. Create an empty database
+    2. Import any forms, views, documents, etc that you configure
+    3. Import the agents using `gradle clean importAll`
+4. You can then test the agent update on your local machine
+
+### Setup
+
+TODO:  Fill in these instructions
+
+1. Create a copy of this repository
+
+2. Create an SHI instance.  You can setup a self-hosted runner for this instance on creation (TODO), or install it later
+
+3. In your repository, open `Settings > Secrets and variables > Actions` and set these variables and secrets
+
+Variable                    | Notes
+----------------------------|--------------------
+`TEST_SERVER`               | The Domino server name.  Example:  domino-1.acme.com/ACME
+`TEST_DATABASE`             | The test database name and path.
+`TEST_DOMINO_INSTALLATION`  | The path to Domino.  Should be:  `/opt/hcl/domino/notes/latest/linux/`
+
+
+Secret                      | Notes
+----------------------------|--------------------
+`TEST_PASSWORD`             | This will be `password` unless you changed it
+
+4. Commit a change to your repository, or trigger the build manually from the Actions tab
+
+5. Test your agent on your instance:  `https://%server%/%TEST_DATABASE%/%agent_name%?OpenAgent`
+
+For example:  `https://domino-1.acme.com/Test.nsf/HelloWorld?OpenAgent`
