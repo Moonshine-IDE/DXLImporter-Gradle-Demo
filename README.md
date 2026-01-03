@@ -30,9 +30,9 @@ You can also find an example script library, `DemoScriptLibrary`
 
 ### Agent Configuration
 
-Configure agents in `agentProperties/agentbuild`.   See the commented template here: `agentProperties/templates/agent.properties`
+Configure agents in `agentProperties/agentbuild`.   See the commented template here: `templates/agent.properties`
 
-Configure script libraries in `agentProperties/scriptbuild`.  See the commented template here: `agentProperties/templates/scriptlibrary.properties`
+Configure script libraries in `agentProperties/scriptbuild`.  See the commented template here: `templates/scriptlibrary.properties`
 
 The name of the file (excluding the `.properties extension`) should match the name of the agent.  This name will be used in [Running Tasks](#running-tasks).
 
