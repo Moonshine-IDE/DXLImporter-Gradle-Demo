@@ -91,7 +91,7 @@ dependencies {
     // dependencies for importAgent
     // DXL Importer
     //dxlRuntime files('dxlLib/CheckDominoDesignElement.jar')
-    dxlRuntime files('dxlLib/ImportDxlNsf.jar')
+    dxlRuntime files('dxlLib/dxl-importer-1.1.jar')
     
     // Dependencies for DXL Importer
     dxlRuntime 'org.tmatesoft.svnkit:svnkit:1.8.5'
@@ -241,7 +241,6 @@ class ImportAgent extends RunDomino {
                     args '-l', this.importLogMode
                 }
 		super.exec()
-		logger.warn 'NOTE:  You can ignore the SVNException error above.  This will be removed in a later version of DXLImporter'
 	}
 }
 
