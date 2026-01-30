@@ -21,7 +21,7 @@ sourceSets {
 
 //File importPropertiesDir = new File('agentProperties/')
 
-String notesInstallation = project.findProperty('notesInstallation') ?: '/Applications/HCL Notes.app/Contents/MacOS/'
+ext.notesInstallation = project.findProperty('notesInstallation') ?: '/Applications/HCL Notes.app/Contents/MacOS/'
 if (!notesInstallation) {
 	throw new GradleException("Missing configured path for Notes installation.  Set notesInstallation in gradle.properties.")
 }
@@ -30,22 +30,22 @@ else if (!(new File(notesInstallation).exists())) {
 }
 
 
-String notesJarBaseDir = "$notesInstallation"
-String envPath = System.getenv('PATH')
+ext.notesJarBaseDir = "$notesInstallation"
+ext.envPath = System.getenv('PATH')
 if (!envPath) {
 	logger.warn "Missing PATH environment variable."
-	envPath = ''  // default to empty string to avoid null errors later
+	ext.envPath = ''  // default to empty string to avoid null errors later
 }
 
 
 // change envPath as needed
 if (notesInstallation.toLowerCase().startsWith('/applications/')) { // treat as macOS
         // directory for additional JARs is inconsistent across version, so just use `/Applications/HCL Notes.app/Contents`
-        notesJarBaseDir = "$notesInstallation/.."
+        ext.notesJarBaseDir = "$notesInstallation/.."
 }
 else { // treat as Windows
 	// update PATH
-	envPath = "$envPath;$notesInstallation"
+	ext.envPath = "$envPath;$notesInstallation"
 	println "Updated PATH: $envPath"
 }
 
@@ -74,8 +74,8 @@ String findFile(String baseDir, String findName) {
 
 // build a jar path to use for Notes.jar
 // Supports local and Linux server executions
-String notesJarPath = findFile(notesJarBaseDir, 'Notes.jar')
-String jarClassPath = "./Notes.jar {{ domino_install_dir }}/jvm/lib/ext/Notes.jar ${notesJarPath.replaceAll(' ', '%20').replaceAll('^\\w+:', '/$0')}"
+ext.notesJarPath = findFile(ext.notesJarBaseDir, 'Notes.jar')
+ext.jarClassPath = "./Notes.jar {{ domino_install_dir }}/jvm/lib/ext/Notes.jar ${notesJarPath.replaceAll(' ', '%20').replaceAll('^\\w+:', '/$0')}"
 
 // Required for Java 8 Language server support
 sourceCompatibility = 1.8
@@ -244,6 +244,59 @@ class ImportAgent extends RunDomino {
 	}
 }
 
+// TODO: generate tasks for the script libraries
+
+def initializeImporterTasks(File importBaseDir) {
+    // TODO: generate tasks for the script libraries
+
+
+    // generate tasks for agents
+    String agentPropertiesDirName = project.findProperty('agentPropertiesDir') ?: 'agentProperties/'
+    new File(importBaseDir, agentPropertiesDirName).eachFileRecurse groovy.io.FileType.FILES, {File curFile ->
+            String fullName = curFile.getName()
+            int splitIndex = fullName.lastIndexOf('.')
+            
+            if (splitIndex >= 0) {  // confirm this is a file with the expected format
+                    String extension = fullName.substring(splitIndex+1)
+                    String agentName = fullName.substring(0, splitIndex)
+                    // treat any files in the "scriptbuild" directory as script libraries.  Improve this logic if needed.
+                    boolean isScriptLibrary = (curFile.getAbsolutePath().toLowerCase().indexOf('scriptbuild') > 0) // default all other files to be agents
+                    
+                    if (extension.equalsIgnoreCase('properties')) {
+                            String importTaskName = "import$agentName"
+                            String jarTaskName = "jar$agentName"
+                            // if the custom jar task doesn't exist, default to base compile
+                            jarTaskName = tasks.findByName(jarTaskName) ? jarTaskName : 'jar'
+                            
+                            // don't override the existing task if it exists - allow this so that the user can define a custom override
+                            if (!tasks.findByName(importTaskName)) {
+                                    tasks.create(name: importTaskName, type: ImportAgent, dependsOn: tasks.getByName(jarTaskName) ) {
+                                            propertiesFile = curFile.getAbsolutePath()
+                                            type = isScriptLibrary ? 'scriptlibrary' : 'agent'
+                                    }
+                            }
+                            // else:  the task already exists
+                            
+                            // add a dependency on the importAll task
+                            if (isScriptLibrary) {
+                                    tasks.getByName('importAllScriptLibraries').dependsOn << importTaskName
+                            }
+                            else {  // agent
+                                    tasks.getByName('importAllAgents').dependsOn << importTaskName
+                            }
+                            
+                            
+                    }
+                    else {
+                            println "Ignoring invalid property file:  ${curFile.getAbsolutePath()}"
+                    }
+            }
+    }
+}
+
+
+
+// If using submodules, move the below lines to build.gradle in the submodules
 task importAllScriptLibraries() {
 	// placeholder for dependencies generated by below code
 }
@@ -257,48 +310,5 @@ task importAll(dependsOn: [tasks.getByName('importAllScriptLibraries'), tasks.ge
 	// further dependencies should be added to importAllScriptLibraries or importAllAgents
 }
 
-// TODO: generate tasks for the script libraries
-
-// generate tasks for agents
-String agentPropertiesDirName = project.findProperty('agentPropertiesDir') ?: 'agentProperties/'
-new File(agentPropertiesDirName).eachFileRecurse groovy.io.FileType.FILES, {File curFile ->
-	String fullName = curFile.getName()
-	int splitIndex = fullName.lastIndexOf('.')
-	
-	if (splitIndex >= 0) {  // confirm this is a file with the expected format
-		String extension = fullName.substring(splitIndex+1)
-		String agentName = fullName.substring(0, splitIndex)
-		// treat any files in the "scriptbuild" directory as script libraries.  Improve this logic if needed.
-		boolean isScriptLibrary = (curFile.getAbsolutePath().toLowerCase().indexOf('scriptbuild') > 0) // default all other files to be agents
-		
-		if (extension.equalsIgnoreCase('properties')) {
-			String importTaskName = "import$agentName"
-			String jarTaskName = "jar$agentName"
-			// if the custom jar task doesn't exist, default to base compile
-			jarTaskName = tasks.findByName(jarTaskName) ? jarTaskName : 'jar'
-			
-			// don't override the existing task if it exists - allow this so that the user can define a custom override
-			if (!tasks.findByName(importTaskName)) {
-				tasks.create(name: importTaskName, type: ImportAgent, dependsOn: tasks.getByName(jarTaskName) ) {
-					propertiesFile = curFile.getAbsolutePath()
-					type = isScriptLibrary ? 'scriptlibrary' : 'agent'
-				}
-			}
-			// else:  the task already exists
-			
-			// add a dependency on the importAll task
-			if (isScriptLibrary) {
-				tasks.getByName('importAllScriptLibraries').dependsOn << importTaskName
-			}
-			else {  // agent
-				tasks.getByName('importAllAgents').dependsOn << importTaskName
-			}
-			
-			
-		}
-		else {
-			println "Ignoring invalid property file:  ${curFile.getAbsolutePath()}"
-		}
-	}
-}
+initializeImporterTasks(projectDir)
 
